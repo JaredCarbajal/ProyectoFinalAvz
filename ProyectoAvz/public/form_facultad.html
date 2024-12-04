@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Facultades</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+</head>
+<body>
+    <div class="w3-row">
+        <div class="w3-col l4 w3-padding">
+            <form class="w3-container w3-padding" id="jsonForm">
+                <label for="nombre">Nombre de la Facultad:</label>
+                <input class="w3-input" type="text" name="nombre" required>
+                <label for="telefono">Teléfono:</label>
+                <input class="w3-input" type="text" name="telefono" required>
+                <label for="ubicacion">Ubicación:</label>
+                <input class="w3-input" type="text" name="ubicacion" required>
+                <button class="w3-input w3-button w3-green" type="submit">Insertar Facultad</button>
+                <br>
+                <button class="w3-input w3-button w3-blue" type="button" id="consultar">Consultar Facultades</button>
+            </form>
+        </div>
+        <div class="w3-col l8">
+            <table class="w3-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Teléfono</th>
+                        <th>Ubicación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tdatos"></tbody>
+            </table>
+        </div>
+    </div>
+    
+</body>
+<script>
+    // Función para insertar facultad
+    document.getElementById('jsonForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const form = document.getElementById('jsonForm');
+        const formData = new FormData(form);
+        const jsonData = JSON.stringify(Object.fromEntries(formData));
+
+        fetch('/facultad/insert', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: jsonData
+        })
+        .then(response => response.json())
+        .then(data => alert(data.mensaje))
+        .catch(error => console.error('Error:', error));
+    });
+
+    // Función para consultar todas las facultades
+    document.getElementById('consultar').addEventListener('click', function(event) {
+        event.preventDefault()
+        fetch('/facultad/getAll')
+        .then(response => response.json())
+        .then(data => {
+            if (Array.isArray(data)) {
+                let h = '';
+                data.forEach(d => {
+                    h += `
+                        <tr>
+                            <td>${d.nombre}</td>
+                            <td>${d.telefono}</td>
+                            <td>${d.ubicacion}</td>
+                            <td>
+                                <button class="w3-button w3-yellow" onclick="editarFacultad(${d.id}, '${d.nombre}', '${d.telefono}', '${d.ubicacion}')">Editar</button>
+                                <button class="w3-button w3-red" onclick="eliminarFacultad(${d.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                document.getElementById("tdatos").innerHTML = h;
+            } else {
+                console.error("La respuesta no es un arreglo:", data);
+                alert("Hubo un error al obtener las facultades.");
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    // Función para eliminar una facultad
+    function eliminarFacultad(id) {
+        const datos = { id: id };
+        fetch('/facultad/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(datos)
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.mensaje);
+            document.getElementById('consultar').click(); // Actualizar la lista
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Función para editar una facultad
+    function editarFacultad(id, nombre, telefono, ubicacion) {
+        const newNombre = prompt("Nuevo nombre de la facultad", nombre);
+        const newTelefono = prompt("Nuevo teléfono", telefono);
+        const newUbicacion = prompt("Nueva ubicación", ubicacion);
+
+        if (newNombre && newTelefono && newUbicacion) {
+            const datos = { id, nombre: newNombre, telefono: newTelefono, ubicacion: newUbicacion };
+            fetch('/facultad/put', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(datos)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.mensaje);
+                document.getElementById('consultar').click(); // Actualizar la lista
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }
+</script>
+</html>

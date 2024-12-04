@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Salones</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+</head>
+<body>
+    <div class="w3-row">
+        <div class="w3-col l4 w3-padding">
+            <form class="w3-container w3-padding" id="jsonForm">
+                <label for="nombre">Nombre del salón:</label>
+                <input class="w3-input" type="text" name="nombre" required>
+                <label for="capacidad">Capacidad:</label>
+                <input class="w3-input" type="number" name="capacidad" required>
+                <label for="edificio">Edificio:</label>
+                <input class="w3-input" type="text" name="edificio" required>
+                <button class="w3-input w3-button w3-green" type="submit">Insertar Salón</button>
+                <br>
+                <button class="w3-input w3-button w3-blue" type="button" id="consultar">Consultar Salones</button>
+            </form>
+        </div>
+        <div class="w3-col l8">
+            <table class="w3-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Capacidad</th>
+                        <th>Edificio</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tdatos"></tbody>
+            </table>
+        </div>
+    </div>
+    
+</body>
+<script>
+    // Función para insertar salón
+    document.getElementById('jsonForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const form = document.getElementById('jsonForm');
+        const formData = new FormData(form);
+        const jsonData = JSON.stringify(Object.fromEntries(formData));
+
+        fetch('/salones/insert', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: jsonData
+        })
+        .then(response => response.json())
+        .then(data => alert(data.mensaje))
+        .catch(error => console.error('Error:', error));
+    });
+
+    // Función para consultar todos los salones
+    document.getElementById('consultar').addEventListener('click', function(event) {
+        event.preventDefault();
+        fetch('/salones/getAll')
+        .then(response => response.json())
+        .then(data => {
+            if (Array.isArray(data)) {
+                let h = '';
+                data.forEach(d => {
+                    h += `
+                        <tr>
+                            <td>${d.nombre}</td>
+                            <td>${d.capacidad}</td>
+                            <td>${d.edificio}</td>
+                            <td>
+                                <button class="w3-button w3-yellow" onclick="editarSalon(${d.id}, '${d.nombre}', ${d.capacidad}, '${d.edificio}')">Editar</button>
+                                <button class="w3-button w3-red" onclick="eliminarSalon(${d.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                document.getElementById("tdatos").innerHTML = h;
+            } else {
+                console.error("La respuesta no es un arreglo:", data);
+                alert("Hubo un error al obtener los salones.");
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    // Función para eliminar un salón
+    function eliminarSalon(id) {
+        const datos = { id: id };
+        fetch('/salones/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(datos)
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.mensaje);
+            document.getElementById('consultar').click(); // Actualizar la lista
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Función para editar un salón
+    function editarSalon(id, nombre, capacidad, edificio) {
+        const newNombre = prompt("Nuevo nombre del salón", nombre);
+        const newCapacidad = prompt("Nueva capacidad", capacidad);
+        const newEdificio = prompt("Nuevo edificio", edificio);
+
+        if (newNombre && newCapacidad && newEdificio) {
+            const datos = { id, nombre: newNombre, capacidad: parseInt(newCapacidad), edificio: newEdificio };
+            fetch('/salones/put', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(datos)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.mensaje);
+                document.getElementById('consultar').click(); // Actualizar la lista
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }
+</script>
+</html>

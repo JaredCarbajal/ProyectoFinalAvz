@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cursos</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+</head>
+<body>
+    <div class="w3-row">
+        <div class="w3-col l4 w3-padding">
+            <form class="w3-container w3-padding" id="jsonForm">
+                <label for="nombre">Nombre del Curso:</label>
+                <input class="w3-input" type="text" name="nombre" required>
+                <label for="creditos">Créditos:</label>
+                <input class="w3-input" type="number" name="creditos" required>
+                <label for="semestre">Semestre:</label>
+                <input class="w3-input" type="text" name="semestre" required>
+                <button class="w3-input w3-button w3-green" type="submit">Insertar Curso</button>
+                <br>
+                <button class="w3-input w3-button w3-blue" type="button" id="consultar">Consultar Cursos</button>
+            </form>
+        </div>
+        <div class="w3-col l8">
+            <table class="w3-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre del Curso</th>
+                        <th>Créditos</th>
+                        <th>Semestre</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tdatos"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="w3-container w3-padding" id="updateForm" style="display:none;">
+        <h2>Actualizar Curso</h2>
+        <form id="jsonUpdateForm">
+            <label for="updateNombre">Nombre del Curso:</label>
+            <input class="w3-input" type="text" name="nombre" id="updateNombre" required>
+            <label for="updateCreditos">Créditos:</label>
+            <input class="w3-input" type="number" name="creditos" id="updateCreditos" required>
+            <label for="updateSemestre">Semestre:</label>
+            <input class="w3-input" type="text" name="semestre" id="updateSemestre" required>
+            <input type="hidden" name="id" id="updateId">
+            <button class="w3-input w3-button w3-yellow" type="submit">Actualizar Curso</button>
+        </form>
+    </div>
+    
+</body>
+<script>
+    // Función para insertar un nuevo curso
+    document.getElementById('jsonForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const form = document.getElementById('jsonForm');
+        const formData = new FormData(form);
+        const jsonData = JSON.stringify(Object.fromEntries(formData));
+
+        fetch('/cursos/insert', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: jsonData
+        })
+        .then(response => response.json())
+        .then(data => alert(data.mensaje))
+        .catch(error => console.error('Error:', error));
+    });
+
+    // Función para consultar todos los cursos
+    document.getElementById('consultar').addEventListener('click', function(event) {
+        event.preventDefault();
+        fetch('/cursos/getAll')
+        .then(response => response.json())
+        .then(data => {
+            let h = '';
+            data.forEach(d => {
+                h += `
+                    <tr>
+                        <td>${d.id}</td>
+                        <td>${d.nombre}</td>
+                        <td>${d.creditos}</td>
+                        <td>${d.semestre}</td>
+                        <td>
+                            <button class="w3-button w3-yellow" onclick="editarCurso(${d.id}, '${d.nombre}', ${d.creditos}, '${d.semestre}')">Editar</button>
+                            <button class="w3-button w3-red" onclick="eliminarCurso(${d.id})">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById("tdatos").innerHTML = h;
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    // Función para editar un curso
+    function editarCurso(id, nombre, creditos, semestre) {
+        document.getElementById("updateForm").style.display = "block";
+        document.getElementById("updateNombre").value = nombre;
+        document.getElementById("updateCreditos").value = creditos;
+        document.getElementById("updateSemestre").value = semestre;
+        document.getElementById("updateId").value = id;
+    }
+
+    // Función para actualizar un curso
+    document.getElementById('jsonUpdateForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const form = document.getElementById('jsonUpdateForm');
+        const formData = new FormData(form);
+        const jsonData = JSON.stringify(Object.fromEntries(formData));
+
+        fetch('/cursos/put', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: jsonData
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.mensaje);
+            document.getElementById("updateForm").style.display = "none";
+            document.getElementById("consultar").click(); // Refrescar la lista de cursos
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    // Función para eliminar un curso
+    function eliminarCurso(id) {
+        const jsonData = JSON.stringify({ id: id });
+
+        fetch('/cursos/delete', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: jsonData
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.mensaje);
+            document.getElementById("consultar").click(); // Refrescar la lista de cursos
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+</html>

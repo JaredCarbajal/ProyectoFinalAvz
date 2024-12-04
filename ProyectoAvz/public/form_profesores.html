@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Profesores</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+</head>
+<body>
+    <div class="w3-row">
+        <div class="w3-col l4 w3-padding">
+            <form class="w3-container w3-padding" id="jsonForm">
+                <label for="nombre">Nombre:</label>
+                <input class="w3-input" type="text" name="nombre" required>
+                <label for="apellido">Apellido:</label>
+                <input class="w3-input" type="text" name="apellido" required>
+                <label for="edad">Edad:</label>
+                <input class="w3-input" type="number" name="edad" required>
+                <button class="w3-input w3-button w3-green" type="submit">Insertar Profesor</button>
+                <br>
+                <button class="w3-input w3-button w3-blue" type="button" id="consultar">Consultar Profesores</button>
+            </form>
+        </div>
+        <div class="w3-col l8">
+            <table class="w3-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Edad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tdatos"></tbody>
+            </table>
+        </div>
+    </div>
+    
+</body>
+<script>
+    // Función para insertar profesor
+    document.getElementById('jsonForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const form = document.getElementById('jsonForm');
+        const formData = new FormData(form);
+        const jsonData = JSON.stringify(Object.fromEntries(formData));
+
+        fetch('/profesores/insert', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: jsonData
+        })
+        .then(response => response.json())
+        .then(data => alert(data.mensaje))
+        .catch(error => console.error('Error:', error));
+    });
+
+    // Función para consultar todos los profesores
+    document.getElementById('consultar').addEventListener('click', function(event) {
+        event.preventDefault();
+        fetch('/profesores/getAll')
+        .then(response => response.json())
+        .then(data => {
+            if (Array.isArray(data)) {
+                let h = '';
+                data.forEach(d => {
+                    h += `
+                        <tr>
+                            <td>${d.nombre}</td>
+                            <td>${d.apellido}</td>
+                            <td>${d.edad}</td>
+                            <td>
+                                <button class="w3-button w3-yellow" onclick="editarProfesor(${d.id}, '${d.nombre}', '${d.apellido}', ${d.edad})">Editar</button>
+                                <button class="w3-button w3-red" onclick="eliminarProfesor(${d.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                document.getElementById("tdatos").innerHTML = h;
+            } else {
+                console.error("La respuesta no es un arreglo:", data);
+                alert("Hubo un error al obtener los profesores.");
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    // Función para eliminar un profesor
+    function eliminarProfesor(id) {
+        const datos = { id: id };
+        fetch('/profesores/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(datos)
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.mensaje);
+            document.getElementById('consultar').click(); // Actualizar la lista
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Función para editar un profesor
+    function editarProfesor(id, nombre, apellido, edad) {
+        const newNombre = prompt("Nuevo nombre", nombre);
+        const newApellido = prompt("Nuevo apellido", apellido);
+        const newEdad = prompt("Nueva edad", edad);
+
+        if (newNombre && newApellido && newEdad) {
+            const datos = { id, nombre: newNombre, apellido: newApellido, edad: parseInt(newEdad) };
+            fetch('/profesores/put', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(datos)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.mensaje);
+                document.getElementById('consultar').click(); // Actualizar la lista
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }
+</script>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Alumnos</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+</head>
+<body>
+    <div class="w3-row">
+        <div class="w3-col l4 w3-padding">
+            <form class="w3-container w3-padding" id="jsonForm">
+                <label for="anio">Año:</label>
+                <input class="w3-input" type="number" name="anio" required>
+                <label for="nombre">Nombre:</label>
+                <input class="w3-input" type="text" name="nombre" required>
+                <label for="apellido">Apellido:</label>
+                <input class="w3-input" type="text" name="apellido" required>
+                <button class="w3-input w3-button w3-green" type="submit">Insertar registro</button>
+                <br>
+                <button class="w3-input w3-button w3-blue" type="button" id="consultar">Consultar alumnos</button>
+            </form>
+        </div>
+        <div class="w3-col l8">
+            <table class="w3-table">
+                <thead>
+                    <tr>
+                        <th>Año</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                    </tr>
+                </thead>
+                <tbody id="tdatos"></tbody>
+            </table>
+        </div>
+    </div>
+    
+</body>
+<script>
+    // Función para insertar alumno
+    document.getElementById('jsonForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const form = document.getElementById('jsonForm');
+        const formData = new FormData(form);
+        const jsonData = JSON.stringify(Object.fromEntries(formData));
+
+        fetch('/alumnos/insert', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: jsonData
+        })
+        .then(response => response.json())
+        .then(data => alert(data.mensaje))
+        .catch(error => console.error('Error:', error));
+    });
+
+    // Función para consultar todos los alumnos
+    document.getElementById('consultar').addEventListener('click', function(event) {
+        event.preventDefault()
+        fetch('/alumnos/getAll')
+        .then(response => response.json())
+        .then(data => {
+            let h = '';
+            data.forEach(d => {
+                h += `
+                    <tr>
+                        <td>${d.anio}</td>
+                        <td>${d.nombre}</td>
+                        <td>${d.apellido}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById("tdatos").innerHTML = h;
+        })
+        .catch(error => console.error('Error:', error));
+    });
+</script>
+</html>
